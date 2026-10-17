@@ -33,8 +33,8 @@ from .core.bystander import BystanderPoker
 from .core.common import (
     PLUGIN_VERSION,
     PROACTIVE_TASK_QUEUE_LIMIT,
+    extract_message_route_components,
     extract_onebot_field,
-    extract_route_components,
     to_positive_int,
 )
 from .core.config import SmartPokeConfig
@@ -788,7 +788,7 @@ class SmartPokePlugin(MaiBotPlugin):
         # 入站路由身份：Host 算 session_id 时混入的 bot 账号 / 连接作用域（口径同 Host），
         # 供 open_session 打开与入站同一条流；也作为 payload 缺 self_id 时的回退来源
         # （NapCat / SnowLuma 都会把 self_id 写进 additional_config）。
-        account_id, scope = extract_route_components(additional)
+        account_id, scope = extract_message_route_components(message, additional)
 
         self_id = str(payload.get("self_id") or "").strip() or account_id
         poker_id = str(payload.get("user_id") or "").strip()

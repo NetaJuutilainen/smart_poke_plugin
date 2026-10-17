@@ -106,6 +106,20 @@ def extract_route_components(additional_config: Any) -> tuple[str, str]:
     )
 
 
+def extract_message_route_components(message: Any, additional_config: Any) -> tuple[str, str]:
+    """Extract route identity using the same precedence as the host.
+
+    Current adapters put ``account_id`` and ``scope`` on the top-level message.
+    ``additional_config`` remains a compatibility fallback for older adapters.
+    """
+    fallback_account_id, fallback_scope = extract_route_components(additional_config)
+    if not isinstance(message, dict):
+        return fallback_account_id, fallback_scope
+    account_id = str(message.get("account_id") or "").strip() or fallback_account_id
+    scope = str(message.get("scope") or "").strip() or fallback_scope
+    return account_id, scope
+
+
 def in_active_hours(start: int, end: int, now_hour: int) -> bool:
     """判断当前小时是否落在 [start, end) 活跃区间内（本地时间，24h 制）。
 
