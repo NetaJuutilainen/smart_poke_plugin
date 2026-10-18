@@ -71,8 +71,8 @@ def extract_onebot_field(payload: Any, *keys: str) -> str:
     return ""
 
 
-# Host 计算入站 session_id 时从 message_info.additional_config 提取路由身份所用的候选键，
-# 与 Host ``RouteKeyFactory.ACCOUNT_ID_KEYS`` / ``SCOPE_KEYS`` 一致、按顺序取第一个非空值。
+# Host 提取路由身份 ``(account_id, scope)`` 所用的候选键（``RouteKeyFactory.ACCOUNT_ID_KEYS``
+# / ``SCOPE_KEYS``），按顺序取第一个非空值；消息顶层取不到时才回退 ``additional_config``。
 # 插件调 chat.open_session 必须传同样的 account_id / scope，算出的 session_id 才与入站
 # 消息同一条流；否则会凭空创建一条无账号归属的"影子会话"。若 Host 调整该键序，需同步。
 ROUTE_ACCOUNT_ID_KEYS = ("platform_io_account_id", "account_id", "self_id", "bot_account")
@@ -91,12 +91,12 @@ def _pick_first_non_empty(mapping: dict, keys: tuple[str, ...]) -> str:
 
 
 def extract_route_components(additional_config: Any) -> tuple[str, str]:
-    """从入站消息的 ``additional_config`` 提取 ``(account_id, scope)`` 路由身份。
+    """从 ``additional_config`` 提取 ``(account_id, scope)`` 路由身份（兼容回退路径）。
 
     口径与 Host ``RouteKeyFactory.extract_components`` 相同（同样的候选键与优先级、
-    ``str().strip()`` 后取第一个非空），取不到的分量返回空串。NapCat / SnowLuma 两个
-    适配器都会把 ``self_id``（及可选的 ``connection_id``）写进 additional_config，
-    Host 注入时还会补 ``platform_io_account_id`` / ``platform_io_scope``。
+    ``str().strip()`` 后取第一个非空），取不到的分量返回空串。当前适配器把路由身份
+    写在消息顶层（见 ``extract_message_route_components``），这里仅作旧适配器的兼容
+    回退；Host 注入时还会补 ``platform_io_account_id`` / ``platform_io_scope``。
     """
     if not isinstance(additional_config, dict):
         return "", ""
@@ -107,10 +107,10 @@ def extract_route_components(additional_config: Any) -> tuple[str, str]:
 
 
 def extract_message_route_components(message: Any, additional_config: Any) -> tuple[str, str]:
-    """Extract route identity using the same precedence as the host.
+    """从入站消息提取 ``(account_id, scope)`` 路由身份，优先级与 Host 相同。
 
-    Current adapters put ``account_id`` and ``scope`` on the top-level message.
-    ``additional_config`` remains a compatibility fallback for older adapters.
+    当前适配器（如 SnowLuma）把 ``account_id`` / ``scope`` 写在消息顶层，
+    ``additional_config`` 仅作旧适配器的兼容回退：顶层取不到非空值时才回退。
     """
     fallback_account_id, fallback_scope = extract_route_components(additional_config)
     if not isinstance(message, dict):

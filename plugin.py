@@ -786,8 +786,8 @@ class SmartPokePlugin(MaiBotPlugin):
             return None
 
         # 入站路由身份：Host 算 session_id 时混入的 bot 账号 / 连接作用域（口径同 Host），
-        # 供 open_session 打开与入站同一条流；也作为 payload 缺 self_id 时的回退来源
-        # （NapCat / SnowLuma 都会把 self_id 写进 additional_config）。
+        # 供 open_session 打开与入站同一条流；也作为 payload 缺 self_id 时的回退来源。
+        # SnowLuma 等适配器写在消息顶层（account_id / scope），additional_config 仅作兼容回退。
         account_id, scope = extract_message_route_components(message, additional)
 
         self_id = str(payload.get("self_id") or "").strip() or account_id
